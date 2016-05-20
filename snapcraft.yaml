@@ -1,0 +1,38 @@
+name: cassandra
+version: 3.5
+summary: Cassandra distributed database
+description: The Apache Cassandra database
+apps:
+    cassandra:
+        command: usr/sbin/cassandra -f -R
+        daemon: simple
+parts:
+    cassandra:
+        plugin: cassandra
+        source: git://github.com/apache/cassandra
+        source-tag: cassandra-3.5
+        stage-packages:
+            - mawk
+            - grep
+        organize:
+            ../build/conf: etc/cassandra
+            ../build/bin/cassandra: usr/sbin/cassandra
+            ../build/build/apache-cassandra-3.5-SNAPSHOT.jar: usr/share/cassandra/apache-cassandra.jar
+            ../build/build/apache-cassandra-thrift-3.5-SNAPSHOT.jar: usr/share/cassandra/apache-cassandra-thrift.jar
+            ../build/build/apache-cassandra-clientutil-3.5-SNAPSHOT.jar: usr/share/cassandra/apache-cassandra-clientutil.jar
+            ../build/lib: usr/share/cassandra/lib
+            usr/bin/mawk: usr/bin/awk
+        filesets:
+            all:
+                - etc/cassandra
+                - usr/sbin/cassandra
+                - usr/share/cassandra
+                - usr/lib/jvm
+                - usr/bin/awk
+                - bin/grep
+        stage:
+            - $all
+        snap:
+            - $all
+
+# vim: set ai et sts=4 tabstop=4 sw=4:
