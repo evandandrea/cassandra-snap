@@ -80,5 +80,5 @@ class CassandraPlugin(snapcraft.plugins.jdk.JdkPlugin):
 
         # sstables, etc
         env.extend(['cassandra_storagedir="$SNAP_USER_DATA"'])
-        env.extend(['JAVA_OPTS="-Dcassandra.logdir=$SNAP_DATA/logs"'])
+        env.extend(['JAVA_OPTS="-Dcassandra.logdir=$SNAP_USER_DATA/logs"'])
         return env
