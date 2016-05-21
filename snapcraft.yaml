@@ -20,6 +20,7 @@ parts:
         stage-packages:
             - mawk
             - grep
+            # For /usr/bin/free
             - procps
         organize:
             ../build/conf: etc/cassandra
@@ -35,6 +36,7 @@ parts:
                 - usr/sbin/cassandra
                 - usr/share/cassandra
                 - usr/lib/jvm
+                # These three needed by cassandra-env.sh
                 - usr/bin/awk
                 - bin/grep
                 - usr/bin/free
