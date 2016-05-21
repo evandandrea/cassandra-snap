@@ -20,6 +20,7 @@ parts:
         stage-packages:
             - mawk
             - grep
+            - procps
         organize:
             ../build/conf: etc/cassandra
             ../build/bin/cassandra: usr/sbin/cassandra
@@ -36,6 +37,7 @@ parts:
                 - usr/lib/jvm
                 - usr/bin/awk
                 - bin/grep
+                - usr/bin/free
         stage:
             - $all
         snap:

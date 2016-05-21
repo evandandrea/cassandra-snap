@@ -78,11 +78,6 @@ class CassandraPlugin(snapcraft.plugins.jdk.JdkPlugin):
 
         env.extend(['JAVA_AGENT="-javaagent:$CASSANDRA_HOME/lib/jamm-0.3.0.jar"'])
 
-
-        # We can't use 'free' without involving snap interfaces.
-        env.extend(['MAX_HEAP_SIZE=500M'])
-        env.extend(['HEAP_NEWSIZE=200M'])
-
         # We can't use 'ldconfig' without involving snap interfaces.
         env.extend(['CASSANDRA_LIBJEMALLOC=-'])
 
