@@ -58,7 +58,7 @@ class CassandraPlugin(snapcraft.plugins.jdk.JdkPlugin):
 
     def clean_build(self):
         super().clean_build()
-        if os.path.exists(os.path.join(self.partdir, 'build.xml')):
+        if os.path.exists(os.path.join(self.builddir, 'build.xml')):
             self.run(['ant', 'clean'])
 
     def env(self, root):
