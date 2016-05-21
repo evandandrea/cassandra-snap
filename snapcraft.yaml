@@ -6,6 +6,12 @@ apps:
     cassandra:
         command: usr/sbin/cassandra -f -R
         daemon: simple
+        # mount-observe is needed for checking available space in the commitlog
+        # directory. It must be manually connected with:
+        # `snap connect cassandra:mount-observe ubuntu-core:mount-observe`
+        plugs: [network, network-bind, mount-observe]
+        # The setpriority syscall is also needed, but currently unavailable:
+        # https://bugs.launchpad.net/snappy/+bug/1577520
 parts:
     cassandra:
         plugin: cassandra
