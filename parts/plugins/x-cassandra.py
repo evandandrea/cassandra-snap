@@ -78,9 +78,6 @@ class CassandraPlugin(snapcraft.plugins.jdk.JdkPlugin):
 
         env.extend(['JAVA_AGENT="-javaagent:$CASSANDRA_HOME/lib/jamm-0.3.0.jar"'])
 
-        # We can't use 'ldconfig' without involving snap interfaces.
-        env.extend(['CASSANDRA_LIBJEMALLOC=-'])
-
         # sstables, etc
         env.extend(['cassandra_storagedir="$SNAP_USER_DATA"'])
         env.extend(['JAVA_OPTS="-Dcassandra.logdir=$SNAP_DATA/logs"'])
