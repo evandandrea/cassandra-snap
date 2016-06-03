@@ -48,11 +48,12 @@ class CassandraPlugin(snapcraft.plugins.jdk.JdkPlugin):
 
     def build(self):
         super().build()
-        self.run(['ant'])
+        # Put the built jars in install/
+        self.run(['ant', 'artifacts', '-Ddist.dir=%s' % self.installdir])
 
         # The setpriority syscall is needed, but currently unavailable:
         # https://bugs.launchpad.net/snappy/+bug/1577520
-        opts_path = os.path.join(self.builddir, 'conf', 'jvm.options')
+        opts_path = os.path.join(self.installdir, 'conf', 'jvm.options')
         for opt in ('-XX:+UseThreadPriorities', '-XX:ThreadPriorityPolicy='):
             self.run(['sed', '-i', 's,^\\({}.*\\),#\\1,'.format(opt), opts_path])
 
@@ -71,14 +72,13 @@ class CassandraPlugin(snapcraft.plugins.jdk.JdkPlugin):
         conf = os.path.join(root, 'etc', 'cassandra')
         env.extend(['CASSANDRA_CONF={}'.format(conf)])
 
-        core_jars = self._find_jars(home)
         lib_jars = self._find_jars(os.path.join(home, 'lib'))
         env.extend(
-            ['CLASSPATH={}'.format(':'.join([conf] + core_jars + lib_jars))])
+            ['CLASSPATH={}'.format(':'.join([conf] + lib_jars))])
 
         env.extend(['JAVA_AGENT="-javaagent:$CASSANDRA_HOME/lib/jamm-0.3.0.jar"'])
 
         # sstables, etc
-        env.extend(['cassandra_storagedir="$SNAP_USER_DATA"'])
-        env.extend(['JAVA_OPTS="-Dcassandra.logdir=$SNAP_USER_DATA/logs"'])
+        env.extend(['cassandra_storagedir="$SNAP_DATA"'])
+        env.extend(['JAVA_OPTS="-Dcassandra.logdir=$SNAP_DATA/logs"'])
         return env

@@ -5,7 +5,8 @@ description: The Apache Cassandra database
 confinement: strict
 apps:
     cassandra:
-        command: usr/sbin/cassandra -f -R
+        # ant artifacts doesn't copy the executable bit
+        command: sh $SNAP/usr/sbin/cassandra -f -R
         daemon: simple
         # mount-observe is needed for checking available space in the commitlog
         # directory. It must be manually connected with:
@@ -24,17 +25,14 @@ parts:
             # For /usr/bin/free
             - procps
         organize:
-            ../build/conf: etc/cassandra
-            ../build/bin/cassandra: usr/sbin/cassandra
-            ../build/build/apache-cassandra-3.5-SNAPSHOT.jar: usr/share/cassandra/apache-cassandra.jar
-            ../build/build/apache-cassandra-thrift-3.5-SNAPSHOT.jar: usr/share/cassandra/apache-cassandra-thrift.jar
-            ../build/build/apache-cassandra-clientutil-3.5-SNAPSHOT.jar: usr/share/cassandra/apache-cassandra-clientutil.jar
-            ../build/lib: usr/share/cassandra/lib
+            conf: etc/cassandra
+            bin/cassandra: usr/sbin/cassandra
+            lib: usr/share/cassandra/lib
             usr/bin/mawk: usr/bin/awk
         snap:
             - etc/cassandra
             - usr/sbin/cassandra
-            - usr/share/cassandra
+            - usr/share/cassandra/lib/*.jar
             - usr/lib/jvm
             # These three needed by cassandra-env.sh
             - usr/bin/awk
