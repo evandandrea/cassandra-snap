@@ -40,12 +40,6 @@ class CassandraPlugin(snapcraft.plugins.jdk.JdkPlugin):
         super().__init__(name, options, project)
         self.build_packages.append('ant')
 
-    def _find_jars(self, root):
-        ret = []
-        for jar in glob.glob(os.path.join(root, '*.jar')):
-            ret.append(os.path.join(root, os.path.basename(jar)))
-        return ret
-
     def build(self):
         super().build()
         # Put the built jars in install/
@@ -61,24 +55,3 @@ class CassandraPlugin(snapcraft.plugins.jdk.JdkPlugin):
         super().clean_build()
         if os.path.exists(os.path.join(self.builddir, 'build.xml')):
             self.run(['ant', 'clean'])
-
-    def env(self, root):
-        # Create a cassandra.in.sh equivalent
-
-        env = super().env(root)
-        home = os.path.join(root, 'usr', 'share', 'cassandra')
-        env.extend(['CASSANDRA_HOME={}'.format(home)])
-
-        conf = os.path.join(root, 'etc', 'cassandra')
-        env.extend(['CASSANDRA_CONF={}'.format(conf)])
-
-        lib_jars = self._find_jars(os.path.join(home, 'lib'))
-        env.extend(
-            ['CLASSPATH={}'.format(':'.join([conf] + lib_jars))])
-
-        env.extend(['JAVA_AGENT="-javaagent:$CASSANDRA_HOME/lib/jamm-0.3.0.jar"'])
-
-        # sstables, etc
-        env.extend(['cassandra_storagedir="$SNAP_DATA"'])
-        env.extend(['JAVA_OPTS="-Dcassandra.logdir=$SNAP_DATA/logs"'])
-        return env
