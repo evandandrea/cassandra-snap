@@ -8,7 +8,8 @@ apps:
         command: cassandra-wrapper -f -R
         daemon: simple
         # mount-observe is needed for checking available space in the data
-        # directories. It must be manually connected with:
+        # directories (java.io.File.getTotalSpace). It must be manually
+        # connected with:
         # `snap connect cassandra:mount-observe ubuntu-core:mount-observe`
         plugs: [network, network-bind, mount-observe]
         # The setpriority syscall is also needed, but currently unavailable:
