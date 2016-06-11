@@ -1,12 +1,20 @@
 #!/bin/sh
 
 CASSANDRA_HOME="$SNAP/usr/share/cassandra"
-CASSANDRA_CONF="$SNAP/etc/cassandra"
+STATIC_CONF="$SNAP/etc/cassandra"
 
-if [ ! -e "$SNAP_DATA/cassandra.yaml" ]; then
-    # Use the default if a config file hasn't been provided.
-    cp $CASSANDRA_CONF/cassandra.yaml $SNAP_DATA/cassandra.yaml
-fi
+CASSANDRA_CONF="$SNAP_DATA/etc"
+CASSANDRA_LOGS="$SNAP_DATA/log"
+
+[ -e "$CASSANDRA_CONF" ] || mkdir "$CASSANDRA_CONF"
+[ -e "$CASSANDRA_LOGS" ] || mkdir "$CASSANDRA_LOGS"
+
+# Required config files. Use the default if one is not provided.
+for f in cassandra.yaml logback.xml; do
+    if [ ! -e "$CASSANDRA_CONF/$f" ]; then
+        cp "$STATIC_CONF/$f" "$CASSANDRA_CONF/$f"
+    fi
+done
 
 # sstables, etc
 cassandra_storagedir="$SNAP_DATA/data"
@@ -16,7 +24,7 @@ for jar in "$CASSANDRA_HOME"/lib/*.jar; do
 done
 JAVA_AGENT="$JAVA_AGENT -javaagent:$CASSANDRA_HOME/lib/jamm-0.3.0.jar"
 
-JVM_OPTS="$JVM_OPTS -Dcassandra.logdir=$SNAP_DATA/logs"
-JVM_OPTS="$JVM_OPTS -Dcassandra.config=file://$SNAP_DATA/cassandra.yaml"
+JVM_OPTS="$JVM_OPTS -Dcassandra.logdir=$CASSANDRA_LOGS"
+JVM_OPTS="$JVM_OPTS -Dcassandra.config=file://$CASSANDRA_CONF/cassandra.yaml"
 
 . $SNAP/usr/sbin/cassandra
