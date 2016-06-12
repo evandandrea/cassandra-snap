@@ -1,10 +1,6 @@
 #!/bin/sh
 
-CASSANDRA_HOME="$SNAP/usr/share/cassandra"
-STATIC_CONF="$SNAP/etc/cassandra"
-
-CASSANDRA_CONF="$SNAP_DATA/etc"
-CASSANDRA_LOGS="$SNAP_DATA/log"
+. "$(dirname "$0")/common"
 
 [ -e "$CASSANDRA_CONF" ] || mkdir "$CASSANDRA_CONF"
 [ -e "$CASSANDRA_LOGS" ] || mkdir "$CASSANDRA_LOGS"
@@ -17,7 +13,7 @@ for f in cassandra.yaml logback.xml; do
 done
 
 # sstables, etc
-cassandra_storagedir="$SNAP_DATA/data"
+cassandra_storagedir="$CASSANDRA_DATA"
 
 for jar in "$CASSANDRA_HOME"/lib/*.jar; do
     CLASSPATH="$CLASSPATH:$jar"

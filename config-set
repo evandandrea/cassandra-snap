@@ -1,5 +1,7 @@
 #!/bin/sh -e
 
+. "$(dirname "$0")/common"
+
 USAGE="\`cat cassandra.yaml | sudo /snap/bin/cassandra.config cassandra.yaml\`"
 
 if [ -z "$SNAP_DATA" ]; then
@@ -27,5 +29,5 @@ if [ -t 0 ] || [ -z "$1" ]; then
     err "$USAGE"
     exit 1
 else
-    cat - > $SNAP_DATA/$1
+    cat - > $CASSANDRA_CONF/$1
 fi

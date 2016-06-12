@@ -1,0 +1,6 @@
+CASSANDRA_HOME="$SNAP/usr/share/cassandra"
+STATIC_CONF="$SNAP/etc/cassandra"
+
+CASSANDRA_CONF="$SNAP_DATA/etc"
+CASSANDRA_LOGS="$SNAP_DATA/log"
+CASSANDRA_DATA="$SNAP_DATA/data"

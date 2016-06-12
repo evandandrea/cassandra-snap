@@ -14,8 +14,10 @@ apps:
         plugs: [network, network-bind, mount-observe]
         # The setpriority syscall is also needed, but currently unavailable:
         # https://bugs.launchpad.net/snappy/+bug/1577520
-    config:
-        command: cassandra-config
+    config-get:
+        command: config-get
+    config-set:
+        command: config-set
 parts:
     cassandra:
         plugin: cassandra
@@ -44,6 +46,8 @@ parts:
         plugin: copy
         files:
             wrapper: bin/cassandra-wrapper
-            config: bin/cassandra-config
+            config-get: bin/config-get
+            config-set: bin/config-set
+            common: bin/common
 
 # vim: set ai et sts=4 tabstop=4 sw=4:

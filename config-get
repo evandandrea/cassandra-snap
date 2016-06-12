@@ -1,0 +1,33 @@
+#!/bin/sh -e
+
+. "$(dirname "$0")/common"
+
+USAGE="\`sudo /snap/bin/cassandra.config-get cassandra.yaml\`"
+
+if [ -z "$SNAP_DATA" ]; then
+    echo "SNAP_DATA not set."
+    exit 1
+fi
+
+err () {
+    echo "$1" >&2
+}
+
+if [ -z "$SNAP_DATA" ]; then
+    err "SNAP_DATA not set."
+    exit 1
+fi
+
+if [ ! -w "$SNAP_DATA" ]; then
+    err "Please re-run as root:"
+    err "$USAGE"
+    exit 1
+fi
+
+if [ -z "$1" ] || [ ! -f "$CASSANDRA_CONF/$1" ]; then
+    err "This tool lets you get files from the Cassandra config directory:"
+    err "$USAGE"
+    exit 1
+else
+    cat $CASSANDRA_CONF/$1
+fi
