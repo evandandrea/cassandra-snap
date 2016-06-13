@@ -1,5 +1,5 @@
 name: cassandra
-version: 3.7
+version: 3.8-SNAPSHOT
 summary: Cassandra distributed database
 description: The Apache Cassandra database
 confinement: strict
@@ -22,7 +22,6 @@ parts:
     cassandra:
         plugin: cassandra
         source: git://github.com/apache/cassandra
-        source-tag: cassandra-3.5
         stage-packages:
             - mawk
             - grep
