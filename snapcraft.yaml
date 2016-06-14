@@ -25,7 +25,7 @@ parts:
     cassandra:
         plugin: cassandra
         source: git://github.com/apache/cassandra
-        source-tag: cassandra-3.5
+        source-tag: cassandra-3.7
         stage-packages:
             - mawk
             - grep
