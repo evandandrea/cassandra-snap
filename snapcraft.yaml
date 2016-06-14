@@ -14,6 +14,9 @@ apps:
         plugs: [network, network-bind, mount-observe]
         # The setpriority syscall is also needed, but currently unavailable:
         # https://bugs.launchpad.net/snappy/+bug/1577520
+    nodetool:
+        command: nodetool-wrapper
+        plugs: [network]
     config-get:
         command: config-get
     config-set:
@@ -33,6 +36,7 @@ parts:
             lib: usr/share/cassandra/lib
             usr/bin/mawk: usr/bin/awk
         snap:
+            - bin/nodetool
             - etc/cassandra
             - usr/sbin/cassandra
             - usr/share/cassandra/lib/*.jar
@@ -48,5 +52,6 @@ parts:
             config-get: bin/config-get
             config-set: bin/config-set
             common: bin/common
+            nodetool: bin/nodetool-wrapper
 
 # vim: set ai et sts=4 tabstop=4 sw=4:

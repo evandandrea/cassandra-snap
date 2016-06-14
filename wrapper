@@ -6,7 +6,7 @@
 [ -e "$CASSANDRA_LOGS" ] || mkdir "$CASSANDRA_LOGS"
 
 # Required config files. Use the default if one is not provided.
-for f in cassandra.yaml logback.xml; do
+for f in cassandra.yaml logback.xml cassandra-env.sh; do
     if [ ! -e "$CASSANDRA_CONF/$f" ]; then
         cp "$STATIC_CONF/$f" "$CASSANDRA_CONF/$f"
     fi
@@ -15,9 +15,6 @@ done
 # sstables, etc
 cassandra_storagedir="$CASSANDRA_DATA"
 
-for jar in "$CASSANDRA_HOME"/lib/*.jar; do
-    CLASSPATH="$CLASSPATH:$jar"
-done
 JAVA_AGENT="$JAVA_AGENT -javaagent:$CASSANDRA_HOME/lib/jamm-0.3.0.jar"
 
 JVM_OPTS="$JVM_OPTS -Dcassandra.logdir=$CASSANDRA_LOGS"
