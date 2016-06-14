@@ -5,7 +5,7 @@ description: The Apache Cassandra database
 confinement: strict
 apps:
     cassandra:
-        command: cassandra-wrapper -f -R
+        command: cassandra-wrapper
         daemon: simple
         # mount-observe is needed for checking available space in the data
         # directories (java.io.File.getTotalSpace). It must be manually

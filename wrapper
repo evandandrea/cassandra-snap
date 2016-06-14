@@ -4,6 +4,7 @@
 
 [ -e "$CASSANDRA_CONF" ] || mkdir "$CASSANDRA_CONF"
 [ -e "$CASSANDRA_LOGS" ] || mkdir "$CASSANDRA_LOGS"
+[ -e "$CASSANDRA_DATA" ] || mkdir "$CASSANDRA_DATA"
 
 # Required config files. Use the default if one is not provided.
 for f in cassandra.yaml logback.xml cassandra-env.sh; do
@@ -12,12 +13,12 @@ for f in cassandra.yaml logback.xml cassandra-env.sh; do
     fi
 done
 
-# sstables, etc
-cassandra_storagedir="$CASSANDRA_DATA"
+export JAVA_AGENT="$JAVA_AGENT -javaagent:$CASSANDRA_HOME/lib/jamm-0.3.0.jar"
 
-JAVA_AGENT="$JAVA_AGENT -javaagent:$CASSANDRA_HOME/lib/jamm-0.3.0.jar"
-
+export cassandra_storagedir="$CASSANDRA_DATA"
 JVM_OPTS="$JVM_OPTS -Dcassandra.logdir=$CASSANDRA_LOGS"
 JVM_OPTS="$JVM_OPTS -Dcassandra.config=file://$CASSANDRA_CONF/cassandra.yaml"
+export JVM_OPTS
 
-. $SNAP/usr/sbin/cassandra
+# The -x bit isn't set on cassandra
+/bin/sh $SNAP/usr/sbin/cassandra -f -R
