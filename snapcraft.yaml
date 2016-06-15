@@ -17,10 +17,14 @@ apps:
     nodetool:
         command: wrapper-nodetool
         plugs: [network]
+
+    # Helpers
     config-get:
         command: config-get
     config-set:
         command: config-set
+    env-get:
+        command: env-get
 parts:
     cassandra:
         plugin: cassandra
@@ -53,6 +57,7 @@ parts:
             wrapper-nodetool: bin/wrapper-nodetool
             config-get: bin/config-get
             config-set: bin/config-set
+            env-get: bin/env-get
             common: bin/common
 
 # vim: set ai et sts=4 tabstop=4 sw=4:
