@@ -18,7 +18,7 @@ apps:
         command: wrapper-nodetool
         plugs: [network]
 
-    # Helpers
+    # Helpers. These will go away when snapd provides a config interface.
     config-get:
         command: config-get
     config-set:
@@ -55,6 +55,8 @@ parts:
         files:
             wrapper-cassandra: bin/wrapper-cassandra
             wrapper-nodetool: bin/wrapper-nodetool
+            # Helpers. These will go away when snapd provides a config
+            # interface.
             config-get: bin/config-get
             config-set: bin/config-set
             env-get: bin/env-get
