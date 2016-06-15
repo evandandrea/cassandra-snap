@@ -5,7 +5,7 @@ description: The Apache Cassandra database
 confinement: strict
 apps:
     cassandra:
-        command: cassandra-wrapper -f -R
+        command: wrapper-cassandra
         daemon: simple
         # mount-observe is needed for checking available space in the data
         # directories (java.io.File.getTotalSpace). It must be manually
@@ -15,12 +15,16 @@ apps:
         # The setpriority syscall is also needed, but currently unavailable:
         # https://bugs.launchpad.net/snappy/+bug/1577520
     nodetool:
-        command: nodetool-wrapper
+        command: wrapper-nodetool
         plugs: [network]
+
+    # Helpers. These will go away when snapd provides a config interface.
     config-get:
         command: config-get
     config-set:
         command: config-set
+    env-get:
+        command: env-get
 parts:
     cassandra:
         plugin: cassandra
@@ -48,10 +52,13 @@ parts:
     glue:
         plugin: copy
         files:
-            wrapper: bin/cassandra-wrapper
+            wrapper-cassandra: bin/wrapper-cassandra
+            wrapper-nodetool: bin/wrapper-nodetool
+            # Helpers. These will go away when snapd provides a config
+            # interface.
             config-get: bin/config-get
             config-set: bin/config-set
+            env-get: bin/env-get
             common: bin/common
-            nodetool: bin/nodetool-wrapper
 
 # vim: set ai et sts=4 tabstop=4 sw=4:

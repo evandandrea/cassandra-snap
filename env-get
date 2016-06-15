@@ -1,0 +1,5 @@
+#!/bin/sh -e
+
+. "$(dirname "$0")/common"
+
+printenv $1
