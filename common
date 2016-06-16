@@ -1,8 +1,8 @@
-export CASSANDRA_HOME="$SNAP/usr/share/cassandra"
+export CASSANDRA_HOME="$SNAP_DATA"
 export STATIC_CONF="$SNAP/etc/cassandra"
 
 export CASSANDRA_CONF="$SNAP_DATA/etc"
-export CASSANDRA_LOGS="$SNAP_DATA/log"
+export CASSANDRA_LOGS="$SNAP_DATA/logs"
 export CASSANDRA_DATA="$SNAP_DATA/data"
 
 if [ -n "$CLASSPATH" ]; then
@@ -11,7 +11,7 @@ else
     CLASSPATH=$CASSANDRA_CONF
 fi
 
-for jar in "$CASSANDRA_HOME"/lib/*.jar; do
+for jar in $SNAP/usr/share/cassandra/lib/*.jar; do
     CLASSPATH="$CLASSPATH:$jar"
 done
 

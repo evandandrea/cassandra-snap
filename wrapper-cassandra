@@ -9,16 +9,18 @@
 # Required config files. Use the default if one is not provided.
 for f in cassandra.yaml logback.xml cassandra-env.sh jvm.options; do
     if [ ! -e "$CASSANDRA_CONF/$f" ]; then
-        cp "$STATIC_CONF/$f" "$CASSANDRA_CONF/$f"
+        if [ "$f" = "cassandra-env.sh" ]; then
+            # Libraries are in /usr/share/cassandra, not CASSANDRA_HOME
+            sed 's,\$CASSANDRA_HOME/lib,$SNAP/usr/share/cassandra/lib,' \
+                "$STATIC_CONF/$f" > "$CASSANDRA_CONF/$f"
+        else
+            cp "$STATIC_CONF/$f" "$CASSANDRA_CONF/$f"
+        fi
     fi
 done
 
-export JAVA_AGENT="$JAVA_AGENT -javaagent:$CASSANDRA_HOME/lib/jamm-0.3.0.jar"
-
 export cassandra_storagedir="$CASSANDRA_DATA"
-JVM_OPTS="$JVM_OPTS -Dcassandra.logdir=$CASSANDRA_LOGS"
-JVM_OPTS="$JVM_OPTS -Dcassandra.config=file://$CASSANDRA_CONF/cassandra.yaml"
-export JVM_OPTS
+export JVM_OPTS="$JVM_OPTS -Dcassandra.config=file://$CASSANDRA_CONF/cassandra.yaml"
 
 # The -x bit isn't set on cassandra
 /bin/sh $SNAP/usr/sbin/cassandra -f -R
