@@ -6,7 +6,7 @@ confinement: strict
 apps:
     cassandra:
         command: wrapper-cassandra
-        daemon: simple
+        daemon: forking
         # mount-observe is needed for checking available space in the data
         # directories (java.io.File.getTotalSpace). It must be manually
         # connected with:
