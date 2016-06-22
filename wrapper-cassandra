@@ -23,4 +23,4 @@ export cassandra_storagedir="$CASSANDRA_DATA"
 export JVM_OPTS="$JVM_OPTS -Dcassandra.config=file://$CASSANDRA_CONF/cassandra.yaml"
 
 # The -x bit isn't set on cassandra
-/bin/sh $SNAP/usr/sbin/cassandra -f -R
+/bin/sh $SNAP/usr/sbin/cassandra -R -p "$CASSANDRA_HOME/cassandra.pid"
