@@ -1,5 +1,5 @@
 name: cassandra
-version: 3.8-SNAPSHOT
+version: 3.10-SNAPSHOT
 summary: Cassandra distributed database
 description: The Apache Cassandra database
 confinement: strict
