@@ -34,6 +34,8 @@ parts:
     cassandra:
         plugin: cassandra
         source: git://github.com/apache/cassandra
+        build-packages:
+            - make
         stage-packages:
             # Copy some packages into the stage directory to steal their
             # pre-built binaries.
