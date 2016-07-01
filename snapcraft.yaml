@@ -33,8 +33,9 @@ apps:
 parts:
     cassandra:
         plugin: cassandra
-        source: git://github.com/apache/cassandra
+        source: https://github.com/apache/cassandra
         source-tag: cassandra-3.7
+        source-type: git
         stage-packages:
             # Copy some packages into the stage directory to steal their
             # pre-built binaries.
