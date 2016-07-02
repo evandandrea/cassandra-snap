@@ -11,7 +11,14 @@ PUSH_URL = 'https://myapps.developer.ubuntu.com/dev/api/snap-push/'
 
 
 def main():
-    if 'AUTH' not in os.environ:
+    # MACAROON_AUTH is of the form:
+    # root_mac = Macaroon.deserialize(root)
+    # discharge_mac = Macaroon.deserialize(discharge)
+    # bound = root_mac.prepare_for_request(discharge_mac)
+    # auth = 'Macaroon root={}, discharge={}'.format(root, bound.serialize())
+    # os.environ['MACAROON_AUTH'] = auth
+
+    if 'MACAROON_AUTH' not in os.environ:
         print('AUTH not set in the environment.', file=sys.stderr)
         return 1
 
