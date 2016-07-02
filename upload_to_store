@@ -4,53 +4,166 @@ import requests
 import os
 import json
 import sys
+import time
 
 
 UPLOAD_URL = 'https://upload.apps.ubuntu.com/unscanned-upload/'
 PUSH_URL = 'https://myapps.developer.ubuntu.com/dev/api/snap-push/'
+RELEASE_URL = 'https://myapps.developer.ubuntu.com/dev/api/snap-release/'
+
+SNAP_NAME = 'cassandra'
+SNAP_SERIES = '16'
+SNAP_CHANNELS = ['beta']
 
 
-def main():
-    # MACAROON_AUTH is of the form:
-    # root_mac = Macaroon.deserialize(root)
-    # discharge_mac = Macaroon.deserialize(discharge)
-    # bound = root_mac.prepare_for_request(discharge_mac)
-    # auth = 'Macaroon root={}, discharge={}'.format(root, bound.serialize())
-    # os.environ['MACAROON_AUTH'] = auth
+class StoreException(Exception):
+    pass
+
+
+def post(url, **kwargs):
+    '''POST to the specified URL.
+
+    :return: json response object on success, None on error.
+    :raises: StoreException on error
+    '''
+    req = requests.request('POST', url, **kwargs)
+    if req.status_code < 200 or req.status_code >= 300:
+        message = 'Got {} on {}:\n{}'.format(req.status_code, url, req.text)
+        raise StoreException(message)
+    else:
+        return req.json()
+
+
+def wait_for_revision(details_url, tries=10, sleep=30):
+    '''Wait for the store to give a revision for the upload.
+
+    :return: The positive revision integer on success
+    :raises: StoreException on error
+    '''
+    data = '<no request>'
+    for _ in range(tries):
+        req = requests.request('GET', details_url)
+        data = req.json()
+        if data.get('processed', False):
+            if data.get('can_release', False):
+                return data['revision']
+            else:
+                message = 'Could not get a revision for the upload.'
+                raise StoreException(message)
+        time.sleep(sleep)
+
+    message = 'Timed out after waiting {} seconds for revision on {}:\n{}'
+    message = message.format(tries * sleep, details_url, data)
+    raise StoreException(message)
+
+
+def print_channel_map(channel_map):
+    '''Print a channel map, e.g.:
+
+    Channel    Revision
+    stable     -
+    candidate  5
+    beta       ^
+    edge       ^
+    '''
+    # Longest string plus two characters.
+    column = max(len(c.get('channel', '')) for c in channel_map) + 2
+
+    if channel_map:
+        padding = ' ' * (column - len('Channel'))
+        print('Channel{}Revision'.format(padding))
+
+    for channel in channel_map:
+        padding = ' ' * (column - len(channel['channel']))
+        print(channel['channel'], end=padding)
+        if 'revision' in channel:
+            print(channel['revision'])
+        else:
+            print('^' if channel.get('info') == 'tracking' else '-')
+
+
+def get_auth_macaroon():
+    '''Returns the value of the MACAROON_AUTH environment variable.
+
+    MACAROON_AUTH is of the form:
+
+    root_mac = Macaroon.deserialize(root)
+    discharge_mac = Macaroon.deserialize(discharge)
+    bound = root_mac.prepare_for_request(discharge_mac)
+    auth = 'Macaroon root={}, discharge={}'.format(root, bound.serialize())
+    os.environ['MACAROON_AUTH'] = auth
+    '''
 
     if 'MACAROON_AUTH' not in os.environ:
-        print('AUTH not set in the environment.', file=sys.stderr)
-        return 1
+        raise RuntimeError('MACAROON_AUTH not set in the environment.')
+    return os.environ.get('MACAROON_AUTH')
 
+
+def get_snap_file():
+    '''Finds the first snap file in the current working directory.
+    :return: string of a snap basename
+    :raises: RuntimeError if no snaps are found
+    '''
     snap_file = [x for x in os.listdir('.') if x.endswith('.snap')]
     if not snap_file:
-        print('No snap files in current directory.', file=sys.stderr)
-        return 1
+        raise RuntimeError('No snap files in current directory.')
+    else:
+        return snap_file[0]
 
-    snap_file = snap_file[0]
-    print('Uploading {}...'.format(snap_file))
+
+def upload_snap(snap_file):
+    '''Upload the snap binary to the Store.'''
 
     headers = {'Accept': 'application/json'}
     files = {'binary': open(snap_file, 'rb')}
-    req = requests.request('POST', UPLOAD_URL, headers=headers, files=files)
-    if req.status_code != 200:
-        message = 'Got {} on upload:\n{}'.format(req.status_code, req.text)
-        print(message, file=sys.stderr)
-        return 1
+    return post(UPLOAD_URL, headers=headers, files=files)
 
-    upload_id = req.json()['upload_id']
+
+def notify_store_of_upload(upload_id, auth_macaroon):
+    '''Tell the Store of the completed upload.'''
 
     headers = {'Content-Type': 'application/json',
                'Accept':'application/json',
-               'Authorization': os.environ['MACAROON_AUTH']}
+               'Authorization': auth_macaroon}
+
     data = {'updown_id': upload_id,
-            'name': 'cassandra',
-            'series': '16'}
-    data = json.dumps(data)
-    req = requests.request('POST', PUSH_URL, headers=headers, data=data)
-    if req.status_code < 200 and req.status_code >= 300:
-        message = 'Got {} on push:\n{}'.format(req.status_code, req.text)
-        print(message, file=sys.stderr)
+            'name': SNAP_NAME,
+            'series': SNAP_SERIES}
+    return post(PUSH_URL, headers=headers, data=json.dumps(data))
+
+
+def publish_snap(revision, auth_macaroon):
+    '''Publish the snap to SNAP_CHANNELS in SNAP_SERIES.'''
+
+    headers = {'Content-Type': 'application/json',
+               'Accept':'application/json',
+               'Authorization': auth_macaroon}
+
+    data = {'name': SNAP_NAME,
+            'revision': revision,
+            'channels': SNAP_CHANNELS,
+            'series': SNAP_SERIES}
+    result = post(RELEASE_URL, headers=headers, data=json.dumps(data))
+    if not result.get('success'):
+        raise StoreException('Could not publish.')
+
+    return result
+
+
+def main():
+    try:
+        auth_macaroon = get_auth_macaroon()
+        snap_file = get_snap_file()
+        result = upload_snap(snap_file)
+        result = notify_store_of_upload(result['upload_id'], auth_macaroon)
+        revision = wait_for_revision(result['status_details_url'])
+        print('Revision {} of {} created.'.format(revision, SNAP_NAME))
+        print()
+        result = publish_snap(revision, auth_macaroon)
+        print_channel_map(result.get('channel_map', []))
+        return 0
+    except (StoreException, RuntimeError) as e:
+        print('Error: {}'.format(e), file=sys.stderr)
         return 1
 
 
