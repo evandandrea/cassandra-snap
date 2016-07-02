@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+
+import requests
+import os
+import json
+import sys
+
+
+UPLOAD_URL = 'https://upload.apps.ubuntu.com/unscanned-upload/'
+PUSH_URL = 'https://myapps.developer.ubuntu.com/dev/api/snap-push/'
+
+
+def main():
+    if 'AUTH' not in os.environ:
+        print('AUTH not set in the environment.', file=sys.stderr)
+        return 1
+
+    snap_file = [x for x in os.listdir('.') if x.endswith('.snap')]
+    if not snap_file:
+        print('No snap files in current directory.', file=sys.stderr)
+        return 1
+
+    snap_file = snap_file[0]
+    print('Uploading {}...'.format(snap_file))
+
+    headers = {'Accept': 'application/json'}
+    files = {'binary': open(snap_file, 'rb')}
+    req = requests.request('POST', UPLOAD_URL, headers=headers, files=files)
+    if req.status_code != 200:
+        message = 'Got {} on upload:\n{}'.format(req.status_code, req.text)
+        print(message, file=sys.stderr)
+        return 1
+
+    upload_id = req.json()['upload_id']
+
+    headers = {'Content-Type': 'application/json',
+               'Accept':'application/json',
+               'Authorization': os.environ['MACAROON_AUTH']}
+    data = {'updown_id': upload_id,
+            'name': 'cassandra',
+            'series': '16'}
+    data = json.dumps(data)
+    req = requests.request('POST', PUSH_URL, headers=headers, data=data)
+    if req.status_code < 200 and req.status_code >= 300:
+        message = 'Got {} on push:\n{}'.format(req.status_code, req.text)
+        print(message, file=sys.stderr)
+        return 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())
