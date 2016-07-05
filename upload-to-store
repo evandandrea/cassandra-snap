@@ -2,14 +2,20 @@
 
 import requests
 import os
+import re
 import json
 import sys
 import time
+from subprocess import PIPE, Popen, TimeoutExpired
+from subprocess import CalledProcessError, check_output
+from pymacaroons import Macaroon
 
 
 UPLOAD_URL = 'https://upload.apps.ubuntu.com/unscanned-upload/'
 PUSH_URL = 'https://myapps.developer.ubuntu.com/dev/api/snap-push/'
 RELEASE_URL = 'https://myapps.developer.ubuntu.com/dev/api/snap-release/'
+
+REFRESH_URL = 'https://login.ubuntu.com/api/v2/tokens/refresh'
 
 SNAP_NAME = 'cassandra'
 SNAP_SERIES = '16'
@@ -83,20 +89,32 @@ def print_channel_map(channel_map):
 
 
 def get_auth_macaroon():
-    '''Returns the value of the MACAROON_AUTH environment variable.
+    '''Returns the decrypted value of the AUTH_MACAROON environment variable.
 
-    MACAROON_AUTH is of the form:
+    AUTH_MACAROON is of the form:
 
     root_mac = Macaroon.deserialize(root)
     discharge_mac = Macaroon.deserialize(discharge)
     bound = root_mac.prepare_for_request(discharge_mac)
     auth = 'Macaroon root={}, discharge={}'.format(root, bound.serialize())
-    os.environ['MACAROON_AUTH'] = auth
+    os.environ['AUTH_MACAROON'] = auth
     '''
 
-    if 'MACAROON_AUTH' not in os.environ:
-        raise RuntimeError('MACAROON_AUTH not set in the environment.')
-    return os.environ.get('MACAROON_AUTH')
+    if 'MACAROON_SECRET' not in os.environ:
+        raise RuntimeError('MACAROON_SECRET not set in the environment.')
+    if 'AUTH_MACAROON' not in os.environ:
+        raise RuntimeError('AUTH_MACAROON not set in the environment.')
+
+    cmd = ['openssl', 'enc', '-aes-256-cbc', '-base64', '-d', '-pass',
+           'env:MACAROON_SECRET']
+    try:
+        p = Popen(cmd, stdin=PIPE, stdout=PIPE, universal_newlines=True)
+        out, _ = p.communicate(input=os.environ['AUTH_MACAROON'])
+    except TimeoutExpired:
+        p.kill()
+    if p.returncode or not out:
+        raise RuntimeError('Could not decrypt macaroon.')
+    return out.strip('\n')
 
 
 def get_snap_file():
@@ -116,7 +134,7 @@ def upload_snap(snap_file):
 
     headers = {'Accept': 'application/json'}
     files = {'binary': open(snap_file, 'rb')}
-    return post(UPLOAD_URL, headers=headers, files=files)
+    return post(UPLOAD_URL, headers=headers, files=files)['upload_id']
 
 
 def notify_store_of_upload(upload_id, auth_macaroon):
@@ -129,7 +147,8 @@ def notify_store_of_upload(upload_id, auth_macaroon):
     data = {'updown_id': upload_id,
             'name': SNAP_NAME,
             'series': SNAP_SERIES}
-    return post(PUSH_URL, headers=headers, data=json.dumps(data))
+    result = post(PUSH_URL, headers=headers, data=json.dumps(data))
+    return result['status_details_url']
 
 
 def publish_snap(revision, auth_macaroon):
@@ -150,16 +169,74 @@ def publish_snap(revision, auth_macaroon):
     return result
 
 
+def cached_macaroon():
+    if 'MACAROON_SECRET' not in os.environ:
+        raise RuntimeError('MACAROON_SECRET not set in the environment.')
+    path = os.path.join(os.path.expanduser('~'), '.macaroon.enc')
+    if not os.path.exists(path):
+        return None
+
+    cmd = ['openssl', 'enc', '-aes-256-cbc', '-base64', '-d', '-pass',
+           'env:MACAROON_SECRET', '-in', path]
+    try:
+        return check_output(cmd, universal_newlines=True).strip('\n')
+    except CalledProcessError:
+        raise RuntimeError('Could not decrypt macaroon.')
+
+
+def save_macaroon(macaroon):
+    '''Encrypts the provided macaroon using AES-256 with the secret from
+    MACAROON_SECRET. Writes the encrypted macaroon to ~/.macaroon.enc
+    '''
+    if 'MACAROON_SECRET' not in os.environ:
+        raise RuntimeError('MACAROON_SECRET not set in the environment.')
+
+    path = os.path.join(os.path.expanduser('~'), '.macaroon.enc')
+    cmd = ['openssl', 'enc', '-aes-256-cbc', '-pass', 'env:MACAROON_SECRET',
+           '-base64', '-out', path]
+    try:
+        p = Popen(cmd, stdin=PIPE, universal_newlines=True)
+        p.communicate(input=macaroon)
+    except TimeoutExpired:
+        p.kill()
+
+    if p.returncode:
+        raise RuntimeError('Could not encrypt macaroon.')
+
+
+def refresh_macaroon(macaroon):
+    fmt = 'Macaroon root=([a-zA-Z0-9_-]+), discharge=([a-zA-Z0-9_-]+)'
+    root, discharge = re.match(fmt, macaroon).groups()
+    data = {'discharge_macaroon': discharge}
+    headers = {'Content-Type': 'application/json',
+               'Accept':'application/json'}
+    result = post(REFRESH_URL, headers=headers, data=json.dumps(data))
+    discharge = result['discharge_macaroon']
+
+    root_macaroon = Macaroon.deserialise(root)
+    discharge_macaroon = Macaroon.deserialize(discharge)
+    bound = root_macaroon.prepare_for_request(discharge_macaroon)
+    discharge = bound.serialize()
+    return 'Macaroon root={}, discharge={}'.format(root, discharge)
+
+
 def main():
     try:
-        auth_macaroon = get_auth_macaroon()
+        macaroon = cached_macaroon()
+        if not macaroon:
+            macaroon = get_auth_macaroon()
+        #macaroon = refresh_macaroon(macaroon)
+        save_macaroon(macaroon)
+
         snap_file = get_snap_file()
-        result = upload_snap(snap_file)
-        result = notify_store_of_upload(result['upload_id'], auth_macaroon)
-        revision = wait_for_revision(result['status_details_url'])
+        upload_id = upload_snap(snap_file)
+        # TODO need to handle possible refresh needed
+        status_url = notify_store_of_upload(upload_id, macaroon)
+        revision = wait_for_revision(status_url)
         print('Revision {} of {} created.'.format(revision, SNAP_NAME))
         print()
-        result = publish_snap(revision, auth_macaroon)
+        # TODO need to handle possible refresh needed
+        result = publish_snap(revision, macaroon)
         print_channel_map(result.get('channel_map', []))
         return 0
     except (StoreException, RuntimeError) as e:
