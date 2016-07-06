@@ -14,7 +14,7 @@ install:
     - pip3 install requests pymacaroons
 script:
     - docker run -v $(pwd):/snapcraft didrocks/snapcraft sh -c 'cd /snapcraft; snapcraft'
-cache:
-    - $HOME/.macaroon.enc
-after_success:
-    - ./upload-to-store
+#cache:
+#    - $HOME/.macaroon.enc
+#after_success:
+#    - ./upload-to-store
