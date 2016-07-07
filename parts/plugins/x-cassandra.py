@@ -21,10 +21,9 @@ variables.
 """
 
 
-import glob
 import logging
 import os
-import shutil
+from urllib.parse import urlparse
 
 import snapcraft
 import snapcraft.common
@@ -34,14 +33,51 @@ import snapcraft.plugins.jdk
 logger = logging.getLogger(__name__)
 
 
+def _get_no_proxy_string():
+    no_proxy = [k.strip() for k in
+                os.environ.get('no_proxy', 'localhost').split(',')]
+    return '|'.join(no_proxy)
+
+
 class CassandraPlugin(snapcraft.plugins.jdk.JdkPlugin):
 
     def __init__(self, name, options, project):
         super().__init__(name, options, project)
         self.build_packages.append('ant')
 
+
+    def _use_proxy(self):
+        keys = ('SNAPCRAFT_LOCAL_SOURCES', 'http_proxy')
+        return all([k in os.environ for k in keys])
+
+
+    def pull(self):
+        super().pull()
+        # Isolate fetching deps from the Internet to the pull() step, so that
+        # this builds on Launchpad.
+        env = os.environ.copy()
+        if self._use_proxy():
+            http = urlparse(os.environ['http_proxy'])
+            https = urlparse(os.environ['https_proxy'])
+            no_proxy = _get_no_proxy_string()
+
+            proxy = ('-Dhttp.proxyHost={http_host}'
+                     ' -Dhttp.proxyPort={http_port}'
+                     ' -Dhttp.nonProxyHosts={no_proxy}'
+                     ' -Dhttps.proxyHost={https_host}'
+                     ' -Dhttps.proxyPort={https_port}'
+                     ' -Dhttps.nonProxyHosts={no_proxy}')
+            env['ANT_OPTS'] = proxy.format(http_host=http.hostname,
+                                           http_port=http.port,
+                                           https_host=https.hostname,
+                                           https_port=https.port,
+                                           no_proxy=no_proxy)
+             
+        snapcraft.BasePlugin.build(self)
+        self.run(['ant', 'maven-ant-tasks-download'], env=env)
+
+
     def build(self):
-        super().build()
         # Put the built jars in install/
         command = ['ant', 'artifacts', '-Ddist.dir=%s' % self.installdir]
         # snapcraft cleanbuild will fail unless you tell javadoc to use UTF8.
