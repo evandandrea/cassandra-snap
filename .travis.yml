@@ -8,14 +8,14 @@ services:
 language: python
 python:
     - '3.5'
-install:
-    - sudo add-apt-repository ppa:facundo/salty -y
-    - sudo apt-get update -q
-    - sudo apt-get install libsodium13 -y
-    - pip3 install snapstore-publish
 script:
     - docker run -v $(pwd):/snapcraft didrocks/snapcraft sh -c 'cd /snapcraft; snapcraft'
 cache:
     - "$HOME/.snapstore-publish-macaroon.enc"
 after_success:
-    - "snapstore-publish --name cassandra --series 16 --channel beta *.snap"
+    - sudo add-apt-repository ppa:facundo/salty -y
+    - sudo apt-get update -q
+    - sudo apt-get install libsodium13 -y
+    - pip3 install snapstore-publish
+    - '[ "${TRAVIS_BRANCH}" = "master" ] && snapstore-publish --name cassandra --series 16 --channel beta *.snap'
+    - '[ "${TRAVIS_BRANCH}" = "edge" ] && snapstore-publish --name cassandra --series 16 --channel edge *.snap'
