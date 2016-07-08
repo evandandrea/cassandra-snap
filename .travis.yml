@@ -1,0 +1,21 @@
+sudo: required
+dist: trusty
+env:
+    global:
+        secure: riYRBbqool0fvJCkZnpoVw6ztSMTjWvTc0kBuCGyrhe+6btlBTGiEjRpFEy5klMfMKJasWZjwU+m74FNTxpUKKkDcg3524+kwyG9JpnGa0vRZBwhN9kNM4ZflUAuHXgMBgq8dRvGalM5TFsL4mpO5iRteu+yBWIUni+30e5mUUk3tjLrsdG+d3dfAILN+p6zwFhblhMnUNS7bfrqRqnPR2ygrRZurwm8FeteD7m1eZj8jkoSftAt0plzyeDM2Pj2y3deI85t9RhC1MmRY3yo2XOLGeRo/PfpDuTuLHHcR18VXwc/xOPH1uFA9fZCBFZ1mRcwJj7AwQ0OI3GUpGKvdJSjVvtQSR4rPfW5vrUpEVb6rfWi2HUgxB6brmqbYsG9Gl1EePj60ONE+e5Aw0p+faT5REvGgowt7i0ZHnOHjB953L6BprpIq9404ML8p2dlHEsjmZyHUL4b8fvah1OKfS1FxlQDnx/STB2L7jYMMJ+D4BHnZ4kQygofgxFR5IR33tb48+n9pREScNB6V8otVV2TRf//wROJTGw+g9rLDlY55XrsE8ibLRLMPH491qoSEmr+ToBYzWF0l57zS9pAqsaBcsrv1YC/BuiwlowuKsZPMWfID0ggiEdpkWyaOqGzYEDE4D83vAtwJmeaRXVMXTZVD2uW5DcIELRPvv6OaHE=
+services:
+    - docker
+language: python
+python:
+    - '3.5'
+script:
+    - docker run -v $(pwd):/snapcraft didrocks/snapcraft sh -c 'cd /snapcraft; snapcraft'
+cache:
+    - "$HOME/.snapstore-publish-macaroon.enc"
+after_success:
+    - sudo add-apt-repository ppa:facundo/salty -y
+    - sudo apt-get update -q
+    - sudo apt-get install libsodium13 -y
+    - pip3 install snapstore-publish
+    - '[ "${TRAVIS_BRANCH}" = "master" ] && snapstore-publish --name cassandra --series 16 --channel beta *.snap'
+    - '[ "${TRAVIS_BRANCH}" = "edge" ] && snapstore-publish --name cassandra --series 16 --channel edge *.snap'
