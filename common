@@ -1,9 +1,13 @@
+if [ -z "$SNAP_COMMON" ]; then
+    # https://github.com/snapcore/snapd/commit/da9fa37
+    export SNAP_COMMON="$SNAP_DATA/../common"
+fi
 export CASSANDRA_HOME="$SNAP_DATA"
 export STATIC_CONF="$SNAP/etc/cassandra"
 
 export CASSANDRA_CONF="$SNAP_DATA/etc"
 export CASSANDRA_LOGS="$SNAP_DATA/logs"
-export CASSANDRA_DATA="$SNAP_DATA/data"
+export CASSANDRA_DATA="$SNAP_COMMON/data"
 
 if [ -n "$CLASSPATH" ]; then
     CLASSPATH=$CLASSPATH:$CASSANDRA_CONF
