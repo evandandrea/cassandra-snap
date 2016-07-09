@@ -11,8 +11,8 @@ err () {
     echo "$1" >&2
 }
 
-if [ -z "$SNAP_DATA" ]; then
-    err "SNAP_DATA not set."
+if [ -z "$CASSANDRA_CONF" ]; then
+    err "CASSANDRA_CONF not set."
     exit 1
 fi
 
