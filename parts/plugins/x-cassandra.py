@@ -47,12 +47,6 @@ class CassandraPlugin(snapcraft.plugins.jdk.JdkPlugin):
         # snapcraft cleanbuild will fail unless you tell javadoc to use UTF8.
         self.run(command, env={'JAVA_TOOL_OPTIONS': '-Dfile.encoding=UTF8'})
 
-        # The setpriority syscall is needed, but currently unavailable:
-        # https://bugs.launchpad.net/snappy/+bug/1577520
-        opts_path = os.path.join(self.installdir, 'conf', 'jvm.options')
-        for opt in ('-XX:+UseThreadPriorities', '-XX:ThreadPriorityPolicy='):
-            self.run(['sed', '-i', 's,^\\({}.*\\),#\\1,'.format(opt), opts_path])
-
     def clean_build(self):
         super().clean_build()
         if os.path.exists(os.path.join(self.builddir, 'build.xml')):

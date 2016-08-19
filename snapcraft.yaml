@@ -11,9 +11,11 @@ apps:
         # directories (java.io.File.getTotalSpace). It must be manually
         # connected with:
         # `snap connect cassandra:mount-observe ubuntu-core:mount-observe`
-        plugs: [network, network-bind, mount-observe]
-        # The setpriority syscall is also needed, but currently unavailable:
-        # https://bugs.launchpad.net/snappy/+bug/1577520
+        #
+        # process-control is needed for the setpriority syscall. It must be
+        # manually connected with:
+        # `snap connect cassandra:process-control ubuntu-core:process-control`
+        plugs: [network, network-bind, mount-observe, process-control]
     nodetool:
         command: wrapper-nodetool
         plugs: [network]
