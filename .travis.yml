@@ -2,13 +2,11 @@ sudo: required
 dist: trusty
 services:
     - docker
-script:
-    - mkdir -p "$HOME/.config/snapcraft"
-    - '[ -e "$HOME/.config/snapcraft/snapcraft.cfg" ] || echo "$SNAPCRAFT_CONFIG" > "$HOME/.config/snapcraft/snapcraft.cfg"'
-    - docker run -v $HOME:/root -v $(pwd):/cwd didrocks/snapcraft sh -c 'cd /cwd; snapcraft'
+env:
+    global:
+        - secure: "DMl4j+LDJqrdUiqBXaWgt1mnaJ1L6gc6W7q+RFMdNE8S6y3btEmSxhdns/TC6S+GdD+yQ88eWvjH8iOb1jNFStJMyVK/Pp7zJwIX9wpWJ9OkioP0geL5FwNXzfWJwDaAj2Byki1ODR62q+bvxrZm+/E7vAzvncEuvZrBL0HwJeqZFN54Pjo+ts5mMn+cfIyfrNbcienR1ZAWTaWEQ5C3XaC9/H6vL3HTEgl20MQG0pmIgCsbayxid0oSw36rsn64ctCm3lCiSAntQMQme2MYZEJBIgoKD5+i3RbdWpnEJksoVyq341xugXM6xEVDNSujxojpyOCaVHxyaPZkrXSEoIMpl4/1zk9zLtMSZ0Mqpppps802TdN2QNUmpHtm06tKONvlO4xqMOL22R2MFtK4BK3/LW2TPfGNhTXhpxHQcioyv9MrtpVxKfSVmLceOlZnuwyHBohca1sJ8fm8fmAD9e+Ljlbd3Q/nfpQdIbDk1VL6WaxM4CXNus1jSGLCzpG7OcpAyqldVyYmmheOpILsmL+eGDnjW1I2wKRlJjIhmm386Za4KwU9NINDpGq+6nOFHe7R30Q3GdL9QbuUZ7ejIFlimSw+ZWROMQgKAvQvhJLtgN9XNKOgE1LiaZF+VTfHXJ2ZnCq214kOlp6t3sGjx8Z4YL6BUSFgiYvBL3T7dog="
 cache:
     directories:
-        - "$HOME/.config"
-after_success:
-    - '[ "${TRAVIS_BRANCH}" = "edge" ] && docker run -v $HOME:/root -v $(pwd):/cwd didrocks/snapcraft sh -c "cd /cwd; snapcraft push *.snap --release edge"'
-    - '[ "${TRAVIS_BRANCH}" = "master" ] && docker run -v $HOME:/root -v $(pwd):/cwd didrocks/snapcraft sh -c "cd /cwd; snapcraft push *.snap --release stable"'
+        - .encrypted
+script:
+    - ./.travis.sh
