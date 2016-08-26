@@ -63,8 +63,9 @@ parts:
             - bin/grep
             - usr/bin/free
     glue:
-        plugin: copy
-        files:
+        plugin: dump
+        source: .
+        organize:
             # Snaps are confined within:
             # - /snap/$name/$revision (RO mounted squashfs)
             # - /var/snap/$name/$revision (RW area for persisting data,
@@ -81,5 +82,7 @@ parts:
             config-set: bin/config-set
             env-get: bin/env-get
             common: bin/common
+        snap:
+            - bin/*
 
 # vim: set ai et sts=4 tabstop=4 sw=4:
