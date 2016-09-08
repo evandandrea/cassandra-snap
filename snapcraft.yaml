@@ -3,20 +3,27 @@ version: 3.7
 summary: Cassandra distributed database
 description: The Apache Cassandra database
 confinement: strict
+grade: stable
 apps:
     cassandra:
         command: wrapper-cassandra
         daemon: forking
-        # mount-observe is needed for checking available space in the data
-        # directories (java.io.File.getTotalSpace). It must be manually
-        # connected with:
-        # `snap connect cassandra:mount-observe ubuntu-core:mount-observe`
-        plugs: [network, network-bind, mount-observe]
-        # The setpriority syscall is also needed, but currently unavailable:
-        # https://bugs.launchpad.net/snappy/+bug/1577520
+        # mount-observe and process-control need to be manually connected
+        # post-install:
+        # `sudo snap connect cassandra:mount-observe ubuntu-core:mount-observe`
+        # `sudo snap connect cassandra:process-control ubuntu-core:process-control`
+        plugs:
+          - network
+          - network-bind
+          # Needed for checking available space in the data directories
+          # (java.io.File.getTotalSpace).
+          - mount-observe
+          # Needed for setpriority
+          - process-control
     nodetool:
         command: wrapper-nodetool
-        plugs: [network]
+        plugs:
+          - network
 
     # Helpers. These will go away when snapd provides a config interface.
     # Deployment tools can use these to avoid hardcoding paths.
@@ -32,7 +39,11 @@ apps:
         command: env-get
 parts:
     cassandra:
-        plugin: cassandra
+        plugin: ant
+        ant-properties:
+            dist.dir: $SNAPCRAFT_PART_INSTALL
+        ant-build-targets:
+            - artifacts
         source: https://github.com/apache/cassandra
         source-tag: cassandra-3.7
         source-type: git
