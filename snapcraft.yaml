@@ -11,15 +11,12 @@ apps:
         # mount-observe and process-control need to be manually connected
         # post-install:
         # `sudo snap connect cassandra:mount-observe ubuntu-core:mount-observe`
-        # `sudo snap connect cassandra:process-control ubuntu-core:process-control`
         plugs:
           - network
           - network-bind
           # Needed for checking available space in the data directories
           # (java.io.File.getTotalSpace).
           - mount-observe
-          # Needed for setpriority
-          - process-control
     nodetool:
         command: wrapper-nodetool
         plugs:
